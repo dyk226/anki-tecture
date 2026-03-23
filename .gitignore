@@ -1,0 +1,6 @@
+.env
+extracted_images/
+__pycache__/
+anki.py
+pdf.py
+.DS_Store

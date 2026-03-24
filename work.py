@@ -131,7 +131,7 @@ def add_card_to_anki(deck_name, model_name, front_text, back_text, tags):
 
 
 # 메인 처리 함수 (app.py에서 이 함수를 부릅니다)
-def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name):
+def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name, use_auto_tag):
     """
     Streamlit에서 받은 PDF 바이트 데이터를 읽어 Gemini로 분석하고 Anki에 추가합니다.
     """
@@ -140,7 +140,7 @@ def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name):
 
     # 자료 성격에 따라 프롬프트 분기 처리
     if material_type == "[피첵]-강조표시_퀴즈":
-        prompt = """
+        prompt = """ 
         파일의 수업 정리 부분에서 빨간색, 파란색 글씨로 된 부분은 하나도 빠짐없이, 그 부분을 잘 알고 있는지 확인하는 문제들을 만들어.
         그 외에 수업 정리 부분에서 알고 있어야 하는 내용을 포함해. 
         문제 개수는 최소 5개 ~ 최대 20개 만들어. 
@@ -159,6 +159,19 @@ def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name):
         문제에 사진이나 표나 그래프가 포함된 경우, 그 시각 자료를 감싸는 가장 작은 사각형 영역의 상대 좌표[ymin, xmin, ymax, xmax]를 0~1000 사이의 정수로 정확히 측정해서 상대_좌표 필드에 넣어. 중요: 표 부분도 무조건 사진에 포함시킬 것. 표와 사진이 같이 있다면 같이 포함되도록 점을 지정할 것.
         문제에 선지가 있으면 <br>① FSH<br>② PTH<br>③ activin<br>④ Cortisol<br>⑤ Thyroid hormone 이런 식으로, 선지 번호는 ①②③④⑤ 이런 원형 아이콘을 쓰고, 선지 사이는 <br>로 줄바꿈해.
         해설은 '[정답] ④ <br>[해설] 호르몬 중..' 처럼 정답을 첫째줄, 해설을 둘째 줄 이후로 쓰고, 관련 단원, 반복 내용은 지우고 진짜 설명하는 내용만 가져와. 해설에 줄바꿈 있다면 <br>로 줄바꿈해.
+        """
+    elif material_type == "[수업자료]땡시":
+        prompt = """
+        파일에서 중요한 내용을 찾아서 중요한 내용이 모두 포함되게 하되, 의과대학 본과 2학년 학생이 풀만한, 조직학 땡시 준비용 anki를 만들어.
+        anki 앞면에는 조직학 사진을 넣고, 뒷면에는 무엇을 가리키는지 답을 써. 뒷면 만들 때 최대한 간결하게 핵심어 위주로 작성해. (불가피할 때는 ~이다. ~하다로 끝나는 문장 형태로 써도 됨)
+        """
+        
+    elif material_type == "[수업자료]퀴즈":
+        prompt = """
+        파일에서 중요한 내용을 찾아서 중요한 내용이 모두 포함되게 하되, 의과대학 본과 2학년 학생이 풀만한, 예복습용 퀴즈 anki를 만들어.
+        안키 앞면은 주관식 단답형, 서술형 형태로 문제 만들고, 뒷면에는 답을 써. 
+        안키 뒷면 만들 때 최대한 간결하게 핵심어 위주로 작성해. (불가피할 때는 ~이다. ~하다로 끝나는 문장 형태로 써도 됨)
+        중요: 문제 유형(안키 앞면)은 의과대학 시험 문제/KMLE 문제와 매우 유사하게, 증례를 푸는 형태로 만들어. (불가피할 때만 지식 체크하는 형태로 만들어.)
         """
 
     # Gemini API 호출 (핵심: filepath 대신 file_bytes를 바로 꽂아 넣습니다)
@@ -204,23 +217,25 @@ def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name):
     quiz_list = json.loads(response.text)
     doc = fitz.open(stream=file_bytes, filetype="pdf")
     
+    if use_auto_tag:
     #덱명과 파일명으로 태그 만들기 
-    try:
-        dbefore, dsep, dafter = deck_name.rpartition('.') # 26-1.1.신장 에서 신장만 자르기
-        fbefore, fsep, fafter = file_name.partition('_') # 1. 신장의구조와_00교수님_피첵_..에서 1. 신장의구조와 자르기
-
-        ff = fbefore.replace('. ', '.') # 1. 신장의구조 >> 1.신장의구조
-        ffbefore, ffsep, ffafter = ff.partition('.') # 1. 신장의구조와에서 1.신장의구조와 로 바꾸기
-
         try:
-            if int(ffbefore)<10: ffbefore = "0"+ffbefore # 1.신장의구조와 >> 01신장의구조와
+            dbefore, dsep, dafter = deck_name.rpartition('.') # 26-1.1.신장 에서 신장만 자르기
+            fbefore, fsep, fafter = file_name.partition('_') # 1. 신장의구조와_00교수님_피첵_..에서 1. 신장의구조와 자르기
+
+            ff = fbefore.replace('. ', '.') # 1. 신장의구조 >> 1.신장의구조
+            ffbefore, ffsep, ffafter = ff.partition('.') # 1. 신장의구조와에서 1.신장의구조와 로 바꾸기
+
+            try:
+                if int(ffbefore)<10: ffbefore = "0"+ffbefore # 1.신장의구조와 >> 01신장의구조와
+            except:
+                pass
+            tag = dafter.replace(' ', '_') + '::' + ffbefore.replace(' ', '_') + '.' + ffafter.replace(' ','_')
+
         except:
             pass
-        tag = dafter.replace(' ', '_') + '::' + ffbefore.replace(' ', '_') + '.' + ffafter.replace(' ','_')
-
-    except:
-        pass
-
+    
+    
 
     added_count = 0 
     for item in quiz_list:

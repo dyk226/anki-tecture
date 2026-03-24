@@ -37,16 +37,23 @@ def create_anki_deck(deck_name):
 # 제목
 st.title("anki-tecture")
 
-uploaded_files = st.file_uploader("PDF 파일을 여기에 끌어다 놓으세요", accept_multiple_files=True, type="pdf")
+uploaded_files = st.file_uploader("PDF 파일을 여기에 끌어다 놓으세요.", accept_multiple_files=True, type="pdf")
 
-options = ["[피첵]-JBL", "[피첵]-강조표시_퀴즈", "[필기]"]
+options = ["[피첵]-JBL", "[피첵]-강조표시_퀴즈", "[수업자료]퀴즈", "[수업자료]땡시"]
+descriptions = {
+    "[피첵]-JBL": "족보 문제 풀이와 해설을 그대로 카드로 만들어 덱에 추가합니다.",
+    "[피첵]-강조표시_퀴즈": "피첵 내 강조표시(빨간 글씨, 파란 글씨)를 5~20개의 주관식 퀴즈로 만들어 덱에 추가합니다.",
+    "[수업자료]퀴즈": "수업자료에서 제미나이가 중요하다고 판단하는 부분을 주관식 퀴즈로 만들어 덱에 추가합니다.",
+    "[수업자료]땡시": "조직학 땡시를 대비하는 주관식 퀴즈를 만들어 덱에 추가합니다."
+}
 material_type = st.pills(
     "학습 타입 선택", 
     options, 
     selection_mode="single", # 하나만 선택 가능
     default="[피첵]-JBL"      # 기본 선택값
 )
-
+if material_type:
+    st.caption(descriptions[material_type])
 
 # 3. Anki 덱 이름 입력
 existing_decks = get_anki_decks()
@@ -65,7 +72,16 @@ else:
     else:
         deck_name = selected_option # 기존 덱을 선택한 경우 그 이름을 그대로 사용
 
-st.divider()
+#st.divider()
+use_auto_tag = st.checkbox("🏷️ 자동 태그 생성", value=True)
+if use_auto_tag:
+    st.write(
+        f'<p style="color: gray; font-size: 0.8rem; margin-left: 30px;">'
+        f'활성화 시 "학습 타입"과 "덱명에서 마지막 .(온점) 뒷부분"::"파일명에서 첫 _(밑줄) 앞부분"이 태그로 달립니다.<br>'
+        f'e.g. 덱명이 "26-1.1.신장", 파일명이 "1.신장과 요로계의 해부_김영석 교수님_피첵"인 경우, <br> ➩ 태그는 "신장::1.신장과_요로계의_해부"'
+        f'</p>', 
+        unsafe_allow_html=True
+    )
 
 # 4. 실행 버튼 및 로직 연결
 if st.button("🚀 Anki 카드 추출 및 추가 시작", type="primary"):
@@ -86,7 +102,7 @@ if st.button("🚀 Anki 카드 추출 및 추가 시작", type="primary"):
                 file_bytes = file.read()
                 
                 # pdf_processor의 함수 호출
-                count = work.process_pdf_to_anki(file_name, file_bytes, material_type, deck_name)
+                count = work.process_pdf_to_anki(file_name, file_bytes, material_type, deck_name, use_auto_tag)
                 
                 end_time = time.time()
                 extime = end_time-start_time

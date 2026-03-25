@@ -129,6 +129,33 @@ def add_card_to_anki(deck_name, model_name, front_text, back_text, tags):
     except requests.exceptions.ConnectionError:
         print("오류: Anki 프로그램이 켜져 있는지, AnkiConnect 애드온이 설치되어 있는지 확인해 주세요.")
 
+def get_valid_model_name():
+    """Anki에 설치된 노트 타입 목록을 가져와서 가장 적절한 '기본' 타입을 찾습니다."""
+    url = 'http://localhost:8765'
+    payload = {
+        "action": "modelNames",
+        "version": 6
+    }
+    
+    try:
+        response = requests.post(url, json=payload)
+        result = response.json()
+        models = result.get('result', [])
+        
+        # 1순위: 한글판 Anki의 "기본"
+        if "기본" in models:
+            return "기본"
+        # 2순위: 영문판 Anki의 "Basic"
+        elif "Basic" in models:
+            return "Basic"
+        # 3순위: 둘 다 없으면 에러 방지를 위해 존재하는 첫 번째 노트 타입 반환
+        elif len(models) > 0:
+            return models[0]
+        else:
+            return None
+            
+    except requests.exceptions.ConnectionError:
+        return None # Anki가 꺼져있을 때
 
 # 메인 처리 함수 (app.py에서 이 함수를 부릅니다)
 def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name, use_auto_tag):
@@ -236,6 +263,12 @@ def process_pdf_to_anki(file_name, file_bytes, material_type, deck_name, use_aut
             pass
     
     
+    # 카드 넣기 전에, 가장 적절한 노트 타입 이름 찾아오기
+    target_model = get_valid_model_name()
+    
+    if not target_model:
+        return 0, "Anki가 켜져 있지 않거나 노트 타입을 찾을 수 없습니다."
+
 
     added_count = 0 
     for item in quiz_list:

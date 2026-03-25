@@ -59,12 +59,12 @@ if material_type:
 existing_decks = get_anki_decks()
 if not existing_decks:
     # Anki가 꺼져있거나 연동이 안 된 경우 경고를 띄우고 직접 입력받게 함
-    st.warning("⚠️ Anki 데스크톱 앱이 켜져 있는지, AnkiConnect가 설치되어 있는지 확인해 주세요.")
-    deck_name = st.text_input("🎯 추가할 Anki 덱 이름을 직접 입력하세요")
+    st.warning("⚠️ Anki 데스크톱 앱이 켜져 있는지, AnkiConnect가 설치되어 있는지, Anki 내에 덱이 만들어져 있는지 확인해주세요.")
+    #deck_name = st.text_input("🎯 추가할 Anki 덱 이름을 직접 입력하세요")
 else:
     # 기존 덱 목록 맨 앞에 '(새 덱 만들기)' 옵션 추가
-    options = ["(새 덱 만들기)"] + existing_decks
-    selected_option = st.selectbox("🎯 카드를 추가할 Anki 덱을 선택하세요", options)
+    options = existing_decks
+    selected_option = st.selectbox("🎯 카드를 추가할 Anki 덱을 선택하세요.", options)
     
     # 사용자가 '새 덱 만들기'를 선택하면 이름을 입력할 수 있는 텍스트 박스를 짠! 하고 보여줌
     if selected_option == "(새 덱 만들기)":

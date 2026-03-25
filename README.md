@@ -88,8 +88,8 @@ Anki에 들어가면 보이는 '덱 만들기' 버튼을 클릭해서 만들면 
 1. 먼저 컴퓨터에서 Anki 프로그램을 실행해 둡니다.
 
 2. 프로그램 폴더에서 주소창에 cmd를 쳐서 까만 창을 열고, 가상환경을 켭니다. 
-    가상환경 켜는 법: Windows라면 'venv\Scripts\activate' 입력, Mac이라면 'source venv/bin/activate' 입력하기
-    (입력창 앞에 (venv)가 없다면 2단계의 3번 과정을 다시 쳐서 켜주세요.)
+- 가상환경 켜는 법: Windows라면 `venv\Scripts\activate` 입력, Mac이라면 `source venv/bin/activate` 입력하기
+- 입력창 앞에 (venv)가 없다면 2단계의 3번 과정을 실행해주세요.
 
 3. 까만 창에 아래 명령어를 입력하고 엔터를 칩니다.
 

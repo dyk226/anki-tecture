@@ -55,6 +55,12 @@ material_type = st.pills(
 if material_type:
     st.caption(descriptions[material_type])
 
+ai_model = st.radio(
+    "🤖 AI 모델 선택",
+    ["Gemini", "Claude"],
+    horizontal=True
+)
+
 # 3. Anki 덱 이름 입력
 existing_decks = get_anki_decks()
 if not existing_decks:
@@ -85,7 +91,7 @@ if use_auto_tag:
 
 # 4. 실행 버튼 및 로직 연결
 if st.button("🚀 Anki 카드 추출 및 추가 시작", type="primary"):
-    start_time = time.time()
+    
     # 방어 로직: 파일이 업로드되지 않았을 때의 경고창
     if not uploaded_files:
         st.warning("먼저 PDF 파일을 업로드해 주세요!")
@@ -94,6 +100,7 @@ if st.button("🚀 Anki 카드 추출 및 추가 시작", type="primary"):
     else:
         st.info(f"총 {len(uploaded_files)}개의 파일을 '{material_type}' 방식으로 분석하여 [{deck_name}] 덱에 추가합니다...")
         for file in uploaded_files:
+            start_time = time.time()
             # 진행 상황을 보여주는 스피너 (로딩 애니메이션)
             with st.spinner(f"'{file.name}' 처리 중..."):
 
@@ -101,8 +108,11 @@ if st.button("🚀 Anki 카드 추출 및 추가 시작", type="primary"):
                 file_name = file.name
                 file_bytes = file.read()
                 
-                # pdf_processor의 함수 호출
-                count = work.process_pdf_to_anki(file_name, file_bytes, material_type, deck_name, use_auto_tag)
+                # ✅ 모델 분기
+                if ai_model == "Claude":
+                    count = work.process_pdf_to_anki_claude(file_name, file_bytes, material_type, deck_name, use_auto_tag)
+                else:
+                    count = work.process_pdf_to_anki(file_name, file_bytes, material_type, deck_name, use_auto_tag)
                 
                 end_time = time.time()
                 extime = end_time-start_time
